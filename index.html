@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera PWA</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    #video {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    #cameraSelector {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <button onclick="openCamera()">Open Camera</button>
+  <select id="cameraSelector"></select>
+  <video id="video" playsinline autoplay></video>
+
+  <script>
+    let videoStream;
+    const video = document.getElementById('video');
+    const cameraSelector = document.getElementById('cameraSelector');
+
+    async function openCamera() {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+        // Populate cameraSelector dropdown with available cameras
+        cameraSelector.innerHTML = '';
+        videoDevices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device.deviceId;
+          option.text = device.label || `Camera ${videoDevices.indexOf(device) + 1}`;
+          cameraSelector.appendChild(option);
+        });
+
+        // Choose the selected camera
+        const selectedCamera = cameraSelector.value || videoDevices[0].deviceId;
+
+        // Access the camera stream
+        videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: selectedCamera },
+        });
+
+        // Display the video stream in the video element
+        video.srcObject = videoStream;
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+      }
+    }
+
+    // Handle camera selection change
+    cameraSelector.addEventListener('change', () => {
+      // Stop the current stream
+      if (videoStream) {
+        const tracks = videoStream.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+
+      // Open the camera with the new selection
+      openCamera();
+    });
+  </script>
+</body>
+</html>
